@@ -21,3 +21,12 @@ d:\utils\Notepad2.exe
 ```
 
 The files are listed in the order they occur in the PATH, so the top result is the one that would run from the command line.
+
+PathFind also allows the option /L to list the paths in the PATH variable line by line (and optionally search for a string).
+
+```
+C:\> pathfind /L "visual studio"
+
+C:\Program Files\Microsoft Visual Studio 12.0\common7\ide
+C:\Program Files\Microsoft Visual Studio 12.0\vc\bin
+```
