@@ -9,6 +9,16 @@ program PathFind;
     TotalFilesFound: Integer = 0;
 
 
+  function UpCaseStr (s: string): string;
+    var
+      i: Integer;
+  begin
+    for i := 1 to Length (s) do
+      s[i] := UpCase (s[i]);
+    Result := s;
+  end;
+
+
   function GetEnv (const Name: string): string;
     var
       BufSize: Integer;
@@ -74,46 +84,83 @@ program PathFind;
     j: Integer;
     CurPath,
     CurExt: string;
+    ch: Char;
 
 begin
   if (ParamCount () < 1) then
     WriteLn ('usage: PathFind [executable]')
   else
   begin
-    Query := ParamStr (1);
-    HasExt := Pos ('.', Query) > 0;
-
-    PathExt := GetEnv ('PATHEXT');
     Path := GetEnv ('PATH');
+    Query := ParamStr (1);
 
-    i := 0;
-    CurPath := GetNthVar (Path, i);
-    while (CurPath <> '') do
+    // option /L [search string]
+    // list all paths in PATH (containing search string)
+
+    if (Query = '/l') or (Query = '/L') then
     begin
-
-      if HasExt then
-        Check (CurPath, Query, '')
-      else
+      Query := '';
+      if (ParamCount () >= 2) then
       begin
+        Query := ParamStr (2);
+        for i := 3 to ParamCount () do
+          Query := Query + ' ' + ParamStr (i);
 
-        j := 0;
-        CurExt := GetNthVar (PathExt, j);
-        while (CurExt <> '') do
-        begin
-          Check (CurPath, Query, CurExt);
-
-          Inc (j);
-          CurExt := GetNthVar (PathExt, j);
-        end;
-
+        ch := '"';
+        if (Query[1] = ch) and (Query[Length (Query)] = ch) then
+          Query := Copy (Query, 2, Length (Query) - 2);
       end;
 
-      Inc (i);
-      CurPath := GetNthVar (Path, i);
-    end;
+      CurPath := '';
+      for i := 1 to Length (Path) do
+      begin
+        ch := Path[i];
+        if (ch = ';') then
+        begin
+          if (Query = '') or (Pos (UpCaseStr (Query), UpCaseStr (CurPath)) > 0) then
+            WriteLn (CurPath);
+          CurPath := '';
+        end
+        else
+          CurPath := CurPath + ch;
+      end;
 
-    if (TotalFilesFound = 0) then
-      WriteLn ('File not found');
+    end
+    else
+    begin
+      HasExt := Pos ('.', Query) > 0;
+
+      PathExt := GetEnv ('PATHEXT');
+
+      i := 0;
+      CurPath := GetNthVar (Path, i);
+      while (CurPath <> '') do
+      begin
+
+        if HasExt then
+          Check (CurPath, Query, '')
+        else
+        begin
+
+          j := 0;
+          CurExt := GetNthVar (PathExt, j);
+          while (CurExt <> '') do
+          begin
+            Check (CurPath, Query, CurExt);
+
+            Inc (j);
+            CurExt := GetNthVar (PathExt, j);
+          end;
+
+        end;
+
+        Inc (i);
+        CurPath := GetNthVar (Path, i);
+      end;
+
+      if (TotalFilesFound = 0) then
+        WriteLn ('File not found');
+    end;
   end;
 
 end.
